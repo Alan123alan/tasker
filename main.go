@@ -30,14 +30,15 @@ func HandleGet(db *sql.DB, getCmd *flag.FlagSet, all *bool, id *string) {
 	}
 
 	if *id != "" {
-		todos := getTodos(db)
-		id := *id
-		for _, todo := range todos {
-			if todo.Id == id {
-				fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
-				fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
-			}
-		}
+		todos := getTodo(db, *id)
+		printToDoTable(todos)
+		// id := *id
+		// for _, todo := range todos {
+		// 	if todo.Id == id {
+		// 		fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
+		// 		fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
+		// 	}
+		// }
 	}
 }
 

@@ -67,3 +67,24 @@ func getTodos(db *sql.DB) (todos []Todo) {
 	}
 	return todos
 }
+
+func getTodo(db *sql.DB, id string) (todos []Todo) {
+	rows, err := db.Query("SELECT id, description, iscomplete, started, finished FROM todos WHERE id = ?", id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	var todo Todo
+	for rows.Next() {
+		err := rows.Scan(&todo.Id, &todo.Description, &todo.IsComplete, &todo.Started, &todo.Finished)
+		if err != nil {
+			panic(err)
+		}
+		todos = append(todos, todo)
+	}
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+	return todos
+}
