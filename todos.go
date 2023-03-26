@@ -2,19 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"time"
-)
 
-type video struct {
-	Id          string
-	Title       string
-	Description string
-	Imageurl    string
-	Url         string
-}
+	"github.com/fatih/color"
+	"github.com/rodaine/table"
+)
 
 type Todo struct {
 	Id          string
@@ -24,45 +17,18 @@ type Todo struct {
 	Finished    time.Time
 }
 
-func getVideos() (videos []video) {
-	videoBytes, err := ioutil.ReadFile("./videos.json")
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(videoBytes, &videos)
-	if err != nil {
-		panic(err)
-	}
-	return videos
-}
+func printToDoTable(todos []Todo) {
+	headerFormat := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFormat := color.New(color.FgYellow).SprintfFunc()
 
-func saveVideos(videos []video) {
-	videoBytes, err := json.Marshal(videos)
-	if err != nil {
-		panic(err)
-	}
-	err = ioutil.WriteFile("./videos.json", videoBytes, 0644)
-	if err != nil {
-		panic(err)
-	}
-}
+	table := table.New("ID", "Description", "Status", "Started", "Finished")
+	table.WithHeaderFormatter(headerFormat).WithFirstColumnFormatter(columnFormat)
 
-func saveVideoToDB(db *sql.DB, video video) {
-	db.Exec("INSERT INTO videos(id, title, description, image_url, url) values (?,?,?,?,?)", video.Id, video.Title, video.Description, video.Imageurl, video.Url)
-}
+	for _, todo := range todos {
+		table.AddRow(todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
+	}
 
-func getVideosFromDB(db *sql.DB) (videos []video) {
-	rows, err := db.Query("SELECT id, title, description, image_url, url FROM videos")
-	if err != nil {
-		panic(err)
-	}
-	var video video
-	for rows.Next() {
-		rows.Scan(&video.Id, &video.Title, &video.Description, &video.Imageurl, &video.Url)
-		videos = append(videos, video)
-	}
-	fmt.Println(videos)
-	return videos
+	table.Print()
 }
 
 func saveToDo(db *sql.DB, todo Todo) {
@@ -79,7 +45,6 @@ func saveToDo(db *sql.DB, todo Todo) {
 		panic(err)
 	}
 	fmt.Printf("Rows afected: %v", rowsAffected)
-	// db.Exec("INSERT INTO todos(description, ispending, iscompleted, started, finished) values (?,?,?,?,?)", todo.Description, todo.IsComplete, todo.Started, todo.Finished)
 }
 
 func getTodos(db *sql.DB) (todos []Todo) {

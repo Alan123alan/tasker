@@ -20,10 +20,11 @@ func HandleGet(db *sql.DB, getCmd *flag.FlagSet, all *bool, id *string) {
 
 	if *all {
 		todos := getTodos(db)
-		fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
-		for _, todo := range todos {
-			fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
-		}
+		printToDoTable(todos)
+		// fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
+		// for _, todo := range todos {
+		// 	fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
+		// }
 
 		return
 	}
@@ -45,8 +46,6 @@ func HandleAdd(db *sql.DB, addCmd *flag.FlagSet, id *string, description *string
 	ValidateToDo(addCmd, description)
 	todo := Todo{*id, *description, false, time.Now(), time.Now()}
 	fmt.Println(todo)
-	// videos := getVideos()
-	// videos = append(videos, video)
 	saveToDo(db, todo)
 }
 
@@ -68,29 +67,10 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-	// db.Exec("CREATE TABLE todos( id int NOT NULL, description string, iscomplete bit, started datetime, finished datetime, PRIMARY KEY (id));")
-	// db.Exec("INSERT INTO videos(id, title, description, image_url, url) values (?,?,?,?,?)")
-	// stmt, err := db.Prepare("INSERT INTO userinfo(username, departname, created) values(?,?,?)")
-	// var version string
-	// err = db.QueryRow("SELECT SQLITE_VERSION()").Scan(&version)
-	// var video video
-	// err = db.QueryRow("SELECT * FROM videos").Scan(&video)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println(version)
-	// fmt.Println(video)
-	// fmt.Println(stmt)
+
 	getCmd := flag.NewFlagSet("get", flag.ExitOnError)
 	getAll := getCmd.Bool("all", false, "Get all to do")
 	getId := getCmd.String("id", "", "Get to do by id")
-
-	// addCmd := flag.NewFlagSet("add", flag.ExitOnError)
-	// addId := addCmd.String("id", "", "todo Id")
-	// addTitle := addCmd.String("title", "", "To do title")
-	// addDescription := addCmd.String("desc", "", "To do description")
-	// addUrl := addCmd.String("url", "", "To do URL")
-	// addImageUrl := addCmd.String("imageurl", "", "Video image URL")
 
 	addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 	addDescription := addCmd.String("desc", "", "To do description")
