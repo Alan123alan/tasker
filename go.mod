@@ -1,4 +1,4 @@
-module github.com/Alan123alan/go-basic-cli
+module github.com/Alan123alan/todoer
 
 go 1.17
 

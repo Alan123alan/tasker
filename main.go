@@ -21,24 +21,12 @@ func HandleGet(db *sql.DB, getCmd *flag.FlagSet, all *bool, id *string) {
 	if *all {
 		todos := getTodos(db)
 		printToDoTable(todos)
-		// fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
-		// for _, todo := range todos {
-		// 	fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
-		// }
-
 		return
 	}
 
 	if *id != "" {
 		todos := getTodo(db, *id)
 		printToDoTable(todos)
-		// id := *id
-		// for _, todo := range todos {
-		// 	if todo.Id == id {
-		// 		fmt.Println("Id\t\t\tDescription\t\t\tStatus\t\t\tStarted\t\t\tFinished")
-		// 		fmt.Printf("%v\t\t\t%v\t\t\t%v\t\t\t%v\t\t\t%v\n", todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
-		// 	}
-		// }
 	}
 }
 
@@ -46,7 +34,6 @@ func HandleAdd(db *sql.DB, addCmd *flag.FlagSet, id *string, description *string
 	addCmd.Parse(os.Args[2:])
 	ValidateToDo(addCmd, description)
 	todo := Todo{*id, *description, false, time.Now(), time.Now()}
-	fmt.Println(todo)
 	saveToDo(db, todo)
 }
 
