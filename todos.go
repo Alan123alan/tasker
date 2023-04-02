@@ -9,12 +9,33 @@ import (
 	"github.com/rodaine/table"
 )
 
+type Status int
+
+const (
+	Started Status = iota
+	Blocked
+	Completed
+)
+
+func (enum Status) String() string {
+	switch enum {
+	case Started:
+		return "Started"
+	case Blocked:
+		return "Blocked"
+	case Completed:
+		return "Completed"
+	default:
+		return fmt.Sprintf("%d", int(enum))
+	}
+}
+
 type Todo struct {
 	Id          string
 	Description string
-	IsComplete  bool
-	Started     time.Time
-	Finished    time.Time
+	Status      Status
+	StartedAt   time.Time
+	CompletedAt time.Time
 }
 
 func printToDoTable(todos []Todo) {
@@ -25,18 +46,18 @@ func printToDoTable(todos []Todo) {
 	table.WithHeaderFormatter(headerFormat).WithFirstColumnFormatter(columnFormat)
 
 	for _, todo := range todos {
-		table.AddRow(todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
+		table.AddRow(todo.Id, todo.Description, Status(todo.Status), todo.StartedAt, todo.CompletedAt)
 	}
 
 	table.Print()
 }
 
 func saveToDo(db *sql.DB, todo Todo) {
-	stmnt, err := db.Prepare("INSERT INTO todos(id, description, iscomplete, started, finished) values (?,?,?,?,?)")
+	stmnt, err := db.Prepare("INSERT INTO todos(id, description, status, started_at, completed_at) values (?,?,?,?,?)")
 	if err != nil {
 		panic(err)
 	}
-	res, err := stmnt.Exec(todo.Id, todo.Description, todo.IsComplete, todo.Started, todo.Finished)
+	res, err := stmnt.Exec(todo.Id, todo.Description, todo.Status, todo.StartedAt, todo.CompletedAt)
 	if err != nil {
 		panic(err)
 	}
@@ -48,14 +69,14 @@ func saveToDo(db *sql.DB, todo Todo) {
 }
 
 func getTodos(db *sql.DB) (todos []Todo) {
-	rows, err := db.Query("SELECT id, description, iscomplete, started, finished FROM todos")
+	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM todos")
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 	var todo Todo
 	for rows.Next() {
-		err := rows.Scan(&todo.Id, &todo.Description, &todo.IsComplete, &todo.Started, &todo.Finished)
+		err := rows.Scan(&todo.Id, &todo.Description, &todo.Status, &todo.StartedAt, &todo.CompletedAt)
 		if err != nil {
 			panic(err)
 		}
@@ -69,14 +90,14 @@ func getTodos(db *sql.DB) (todos []Todo) {
 }
 
 func getTodo(db *sql.DB, id string) (todos []Todo) {
-	rows, err := db.Query("SELECT id, description, iscomplete, started, finished FROM todos WHERE id = ?", id)
+	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM todos WHERE id = ?", id)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 	var todo Todo
 	for rows.Next() {
-		err := rows.Scan(&todo.Id, &todo.Description, &todo.IsComplete, &todo.Started, &todo.Finished)
+		err := rows.Scan(&todo.Id, &todo.Description, &todo.Status, &todo.StartedAt, &todo.CompletedAt)
 		if err != nil {
 			panic(err)
 		}
@@ -87,4 +108,30 @@ func getTodo(db *sql.DB, id string) (todos []Todo) {
 		panic(err)
 	}
 	return todos
+}
+
+func updateTodo(db *sql.DB, id string, description string, status Status) {
+	todo := getTodo(db, id)[0]
+	if description != "" {
+		todo.Description = description
+	}
+	if status != Started {
+		todo.Status = status
+		if status == Completed {
+			todo.CompletedAt = time.Now()
+		}
+	}
+	stmnt, err := db.Prepare(`UPDATE todos SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
+	if err != nil {
+		panic(err)
+	}
+	res, err := stmnt.Exec(todo.Description, todo.Status, todo.StartedAt, todo.CompletedAt, todo.Id)
+	if err != nil {
+		panic(err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Rows afected: %v", rowsAffected)
 }

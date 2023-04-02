@@ -33,8 +33,14 @@ func HandleGet(db *sql.DB, getCmd *flag.FlagSet, all *bool, id *string) {
 func HandleAdd(db *sql.DB, addCmd *flag.FlagSet, id *string, description *string) {
 	addCmd.Parse(os.Args[2:])
 	ValidateToDo(addCmd, description)
-	todo := Todo{*id, *description, false, time.Now(), time.Now()}
+	todo := Todo{*id, *description, 0, time.Now(), time.Now()}
 	saveToDo(db, todo)
+}
+
+func HandleUpdate(db *sql.DB, updateCmd *flag.FlagSet, id *string, description *string, status *Status) {
+	updateCmd.Parse(os.Args[2:])
+	validateUpdate(updateCmd, id)
+	updateTodo(db, *id, *description, *status)
 }
 
 func ValidateToDo(addCmd *flag.FlagSet, desc *string) {
@@ -45,8 +51,12 @@ func ValidateToDo(addCmd *flag.FlagSet, desc *string) {
 	}
 }
 
-func HandleHelp() {
-
+func validateUpdate(updateCmd *flag.FlagSet, id *string) {
+	if *id == "" {
+		fmt.Println("id is required to update a To do")
+		updateCmd.PrintDefaults()
+		os.Exit(1)
+	}
 }
 
 func main() {
@@ -55,6 +65,8 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+	// stmnt, err := db.Prepare(`CREATE TABLE todos (id INT PRIMARY KEY, description STRING, status INT, started_at DATETIME, completed_at DATETIME);`)
+	// stmnt.Exec()
 
 	getCmd := flag.NewFlagSet("get", flag.ExitOnError)
 	getAll := getCmd.Bool("all", false, "Get all to do")
@@ -62,10 +74,15 @@ func main() {
 
 	addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 	addDescription := addCmd.String("desc", "", "To do description")
-	addId := addCmd.String("id", "", "todo Id")
+	addId := addCmd.String("id", "", "To do Id")
+
+	updateCmd := flag.NewFlagSet("update", flag.ExitOnError)
+	updateDescription := updateCmd.String("desc", "", "To do description")
+	updateStatus := updateCmd.Int("status", 0, "To do status")
+	updateId := updateCmd.String("id", "", "To do id")
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'get' or 'add' commands")
+		fmt.Println("expected 'get', 'add' or 'updated' commands")
 		os.Exit(1)
 	}
 
@@ -74,8 +91,9 @@ func main() {
 		HandleGet(db, getCmd, getAll, getId)
 	case "add":
 		HandleAdd(db, addCmd, addId, addDescription)
+	case "update":
+		HandleUpdate(db, updateCmd, updateId, updateDescription, (*Status)(updateStatus))
 	case "help":
-		HandleHelp()
 	default:
 		fmt.Printf("'%v' is not a valid command. See './go-basic-cli -help'.", os.Args[1])
 
