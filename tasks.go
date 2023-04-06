@@ -71,15 +71,15 @@ func printToDoTable(tasks []TaskModel) {
 func saveTask(db *sql.DB, task Task) {
 	stmnt, err := db.Prepare("INSERT INTO tasks(description, status, started_at, completed_at) values (?,?,?,?)")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	fmt.Printf("Rows afected: %v", rowsAffected)
 }
@@ -87,20 +87,20 @@ func saveTask(db *sql.DB, task Task) {
 func getTasks(db *sql.DB) (tasks []TaskModel) {
 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer rows.Close()
 	var task TaskModel
 	for rows.Next() {
 		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		tasks = append(tasks, task)
 	}
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return tasks
 }
@@ -108,20 +108,20 @@ func getTasks(db *sql.DB) (tasks []TaskModel) {
 func getTask(db *sql.DB, id string) (tasks []TaskModel) {
 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks WHERE id = ?", id)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer rows.Close()
 	var task TaskModel
 	for rows.Next() {
 		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		tasks = append(tasks, task)
 	}
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return tasks
 }
@@ -139,15 +139,15 @@ func updateTask(db *sql.DB, id string, description string, status Status) {
 	}
 	stmnt, err := db.Prepare(`UPDATE tasks SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt, task.Id)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	fmt.Printf("Rows afected: %v", rowsAffected)
 }

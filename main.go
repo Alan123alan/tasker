@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -62,7 +63,7 @@ func validateTaskUpdate(updateCmd *flag.FlagSet, id *string) {
 func main() {
 	db, err := sql.Open("sqlite", "./database.db")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
