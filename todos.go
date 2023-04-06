@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/fatih/color"
@@ -30,7 +31,14 @@ func (enum Status) String() string {
 	}
 }
 
-type Todo struct {
+type Task struct {
+	Description string
+	Status      Status
+	StartedAt   time.Time
+	CompletedAt time.Time
+}
+
+type TaskModel struct {
 	Id          string
 	Description string
 	Status      Status
@@ -38,26 +46,34 @@ type Todo struct {
 	CompletedAt time.Time
 }
 
-func printToDoTable(todos []Todo) {
+func createTaskTable(db *sql.DB) {
+	stmnt, err := db.Prepare(`CREATE TABLE tasks (id INTEGER PRIMARY KEY, description TEXT, status INTEGER, started_at DATETIME, completed_at DATETIME);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	stmnt.Exec()
+}
+
+func printToDoTable(tasks []TaskModel) {
 	headerFormat := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFormat := color.New(color.FgYellow).SprintfFunc()
 
 	table := table.New("ID", "Description", "Status", "Started", "Finished")
 	table.WithHeaderFormatter(headerFormat).WithFirstColumnFormatter(columnFormat)
 
-	for _, todo := range todos {
-		table.AddRow(todo.Id, todo.Description, Status(todo.Status), todo.StartedAt, todo.CompletedAt)
+	for _, task := range tasks {
+		table.AddRow(task.Id, task.Description, Status(task.Status), task.StartedAt, task.CompletedAt)
 	}
 
 	table.Print()
 }
 
-func saveToDo(db *sql.DB, todo Todo) {
-	stmnt, err := db.Prepare("INSERT INTO todos(id, description, status, started_at, completed_at) values (?,?,?,?,?)")
+func saveTask(db *sql.DB, task Task) {
+	stmnt, err := db.Prepare("INSERT INTO tasks(description, status, started_at, completed_at) values (?,?,?,?)")
 	if err != nil {
 		panic(err)
 	}
-	res, err := stmnt.Exec(todo.Id, todo.Description, todo.Status, todo.StartedAt, todo.CompletedAt)
+	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt)
 	if err != nil {
 		panic(err)
 	}
@@ -68,64 +84,64 @@ func saveToDo(db *sql.DB, todo Todo) {
 	fmt.Printf("Rows afected: %v", rowsAffected)
 }
 
-func getTodos(db *sql.DB) (todos []Todo) {
-	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM todos")
+func getTasks(db *sql.DB) (tasks []TaskModel) {
+	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	var todo Todo
+	var task TaskModel
 	for rows.Next() {
-		err := rows.Scan(&todo.Id, &todo.Description, &todo.Status, &todo.StartedAt, &todo.CompletedAt)
+		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
 		if err != nil {
 			panic(err)
 		}
-		todos = append(todos, todo)
+		tasks = append(tasks, task)
 	}
 	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
-	return todos
+	return tasks
 }
 
-func getTodo(db *sql.DB, id string) (todos []Todo) {
-	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM todos WHERE id = ?", id)
+func getTask(db *sql.DB, id string) (tasks []TaskModel) {
+	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks WHERE id = ?", id)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	var todo Todo
+	var task TaskModel
 	for rows.Next() {
-		err := rows.Scan(&todo.Id, &todo.Description, &todo.Status, &todo.StartedAt, &todo.CompletedAt)
+		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
 		if err != nil {
 			panic(err)
 		}
-		todos = append(todos, todo)
+		tasks = append(tasks, task)
 	}
 	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
-	return todos
+	return tasks
 }
 
-func updateTodo(db *sql.DB, id string, description string, status Status) {
-	todo := getTodo(db, id)[0]
+func updateTask(db *sql.DB, id string, description string, status Status) {
+	task := getTask(db, id)[0]
 	if description != "" {
-		todo.Description = description
+		task.Description = description
 	}
 	if status != Started {
-		todo.Status = status
+		task.Status = status
 		if status == Completed {
-			todo.CompletedAt = time.Now()
+			task.CompletedAt = time.Now()
 		}
 	}
-	stmnt, err := db.Prepare(`UPDATE todos SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
+	stmnt, err := db.Prepare(`UPDATE tasks SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
 	if err != nil {
 		panic(err)
 	}
-	res, err := stmnt.Exec(todo.Description, todo.Status, todo.StartedAt, todo.CompletedAt, todo.Id)
+	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt, task.Id)
 	if err != nil {
 		panic(err)
 	}

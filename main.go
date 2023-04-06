@@ -19,31 +19,31 @@ func HandleGet(db *sql.DB, getCmd *flag.FlagSet, all *bool, id *string) {
 	}
 
 	if *all {
-		todos := getTodos(db)
-		printToDoTable(todos)
+		tasks := getTasks(db)
+		printToDoTable(tasks)
 		return
 	}
 
 	if *id != "" {
-		todos := getTodo(db, *id)
-		printToDoTable(todos)
+		tasks := getTask(db, *id)
+		printToDoTable(tasks)
 	}
 }
 
 func HandleAdd(db *sql.DB, addCmd *flag.FlagSet, id *string, description *string) {
 	addCmd.Parse(os.Args[2:])
-	ValidateToDo(addCmd, description)
-	todo := Todo{*id, *description, 0, time.Now(), time.Now()}
-	saveToDo(db, todo)
+	validateNewTask(addCmd, description)
+	task := Task{*description, 0, time.Now(), time.Now()}
+	saveTask(db, task)
 }
 
 func HandleUpdate(db *sql.DB, updateCmd *flag.FlagSet, id *string, description *string, status *Status) {
 	updateCmd.Parse(os.Args[2:])
-	validateUpdate(updateCmd, id)
-	updateTodo(db, *id, *description, *status)
+	validateTaskUpdate(updateCmd, id)
+	updateTask(db, *id, *description, *status)
 }
 
-func ValidateToDo(addCmd *flag.FlagSet, desc *string) {
+func validateNewTask(addCmd *flag.FlagSet, desc *string) {
 	if *desc == "" {
 		fmt.Println("Description is required to add a To do")
 		addCmd.PrintDefaults()
@@ -51,7 +51,7 @@ func ValidateToDo(addCmd *flag.FlagSet, desc *string) {
 	}
 }
 
-func validateUpdate(updateCmd *flag.FlagSet, id *string) {
+func validateTaskUpdate(updateCmd *flag.FlagSet, id *string) {
 	if *id == "" {
 		fmt.Println("id is required to update a To do")
 		updateCmd.PrintDefaults()
@@ -60,13 +60,13 @@ func validateUpdate(updateCmd *flag.FlagSet, id *string) {
 }
 
 func main() {
-	db, err := sql.Open("sqlite", "./myDb.db")
+	db, err := sql.Open("sqlite", "./database.db")
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-	// stmnt, err := db.Prepare(`CREATE TABLE todos (id INT PRIMARY KEY, description STRING, status INT, started_at DATETIME, completed_at DATETIME);`)
-	// stmnt.Exec()
+
+	createTaskTable(db)
 
 	getCmd := flag.NewFlagSet("get", flag.ExitOnError)
 	getAll := getCmd.Bool("all", false, "Get all to do")
@@ -82,7 +82,7 @@ func main() {
 	updateId := updateCmd.String("id", "", "To do id")
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'get', 'add' or 'updated' commands")
+		fmt.Println("expected 'get', 'add' or 'update' commands")
 		os.Exit(1)
 	}
 
