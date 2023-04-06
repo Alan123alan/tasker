@@ -1,4 +1,4 @@
-module github.com/Alan123alan/todoer
+module github.com/Alan123alan/tasker
 
 go 1.17
 
