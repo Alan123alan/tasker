@@ -47,7 +47,7 @@ type TaskModel struct {
 }
 
 func createTaskTable(db *sql.DB) {
-	stmnt, err := db.Prepare(`CREATE TABLE tasks (id INTEGER PRIMARY KEY, description TEXT, status INTEGER, started_at DATETIME, completed_at DATETIME);`)
+	stmnt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, description TEXT, status INTEGER, started_at DATETIME, completed_at DATETIME);`)
 	if err != nil {
 		log.Fatal(err)
 	}
