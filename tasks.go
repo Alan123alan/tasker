@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
 )
@@ -84,26 +85,26 @@ func saveTask(db *sql.DB, task Task) {
 	fmt.Printf("Rows afected: %v", rowsAffected)
 }
 
-func getTasks(db *sql.DB) (tasks []TaskModel) {
-	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	var task TaskModel
-	for rows.Next() {
-		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tasks = append(tasks, task)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return tasks
-}
+// func getTasks(db *sql.DB) (tasks []TaskModel) {
+// 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer rows.Close()
+// 	var task TaskModel
+// 	for rows.Next() {
+// 		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		tasks = append(tasks, task)
+// 	}
+// 	err = rows.Err()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	return tasks
+// }
 
 func getTask(db *sql.DB, id string) (tasks []TaskModel) {
 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks WHERE id = ?", id)
@@ -126,28 +127,63 @@ func getTask(db *sql.DB, id string) (tasks []TaskModel) {
 	return tasks
 }
 
-func updateTask(db *sql.DB, id string, description string, status Status) {
-	task := getTask(db, id)[0]
-	if description != "" {
-		task.Description = description
-	}
-	if status != Started {
-		task.Status = status
-		if status == Completed {
-			task.CompletedAt = time.Now()
+func getTasks(DB *sql.DB) tea.Cmd {
+	return func() tea.Msg {
+		rows, err := DB.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
+		if err != nil {
+			return errMsg{err}
 		}
+		defer rows.Close()
+		var task TaskModel
+		tasks := []TaskModel{}
+		for rows.Next() {
+			err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
+			if err != nil {
+				return errMsg{err}
+			}
+			tasks = append(tasks, task)
+		}
+		err = rows.Err()
+		if err != nil {
+			return errMsg{err}
+		}
+		return taskMsg(tasks)
+
 	}
-	stmnt, err := db.Prepare(`UPDATE tasks SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt, task.Id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Rows afected: %v", rowsAffected)
 }
+
+type taskMsg []TaskModel
+
+type errMsg struct {
+	err error
+}
+
+func (e errMsg) Error() string {
+	return e.err.Error()
+}
+
+// func updateTask(db *sql.DB, id string, description string, status Status) {
+// 	task := getTask(db, id)[0]
+// 	if description != "" {
+// 		task.Description = description
+// 	}
+// 	if status != Started {
+// 		task.Status = status
+// 		if status == Completed {
+// 			task.CompletedAt = time.Now()
+// 		}
+// 	}
+// 	stmnt, err := db.Prepare(`UPDATE tasks SET description=?, status=?, started_at=?, completed_at=? WHERE id = ?`)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	res, err := stmnt.Exec(task.Description, task.Status, task.StartedAt, task.CompletedAt, task.Id)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	rowsAffected, err := res.RowsAffected()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("Rows afected: %v", rowsAffected)
+// }
