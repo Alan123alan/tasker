@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
 )
@@ -85,26 +84,26 @@ func saveTask(db *sql.DB, task Task) {
 	fmt.Printf("Rows afected: %v", rowsAffected)
 }
 
-// func getTasks(db *sql.DB) (tasks []TaskModel) {
-// 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer rows.Close()
-// 	var task TaskModel
-// 	for rows.Next() {
-// 		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		tasks = append(tasks, task)
-// 	}
-// 	err = rows.Err()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	return tasks
-// }
+func getTasks(db *sql.DB) (tasks []TaskModel) {
+	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	var task TaskModel
+	for rows.Next() {
+		err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tasks = append(tasks, task)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return tasks
+}
 
 func getTask(db *sql.DB, id string) (tasks []TaskModel) {
 	rows, err := db.Query("SELECT id, description, status, started_at, completed_at FROM tasks WHERE id = ?", id)
@@ -127,30 +126,33 @@ func getTask(db *sql.DB, id string) (tasks []TaskModel) {
 	return tasks
 }
 
-func getTasks(DB *sql.DB) tea.Cmd {
-	return func() tea.Msg {
-		rows, err := DB.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
-		if err != nil {
-			return errMsg{err}
-		}
-		defer rows.Close()
-		var task TaskModel
-		tasks := []TaskModel{}
-		for rows.Next() {
-			err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
-			if err != nil {
-				return errMsg{err}
-			}
-			tasks = append(tasks, task)
-		}
-		err = rows.Err()
-		if err != nil {
-			return errMsg{err}
-		}
-		return taskMsg(tasks)
+// func getTasks(DB *sql.DB) tea.Cmd {
+// 	return func() tea.Msg {
+// 		rows, err := DB.Query("SELECT id, description, status, started_at, completed_at FROM tasks")
+// 		if err != nil {
+// 			fmt.Print(err)
+// 			return errMsg{err}
+// 		}
+// 		defer rows.Close()
+// 		var task TaskModel
+// 		tasks := []TaskModel{}
+// 		for rows.Next() {
+// 			err := rows.Scan(&task.Id, &task.Description, &task.Status, &task.StartedAt, &task.CompletedAt)
+// 			if err != nil {
+// 				fmt.Print(err)
+// 				return errMsg{err}
+// 			}
+// 			tasks = append(tasks, task)
+// 		}
+// 		err = rows.Err()
+// 		if err != nil {
+// 			fmt.Print(err)
+// 			return errMsg{err}
+// 		}
+// 		return taskMsg(tasks)
 
-	}
-}
+// 	}
+// }
 
 type taskMsg []TaskModel
 

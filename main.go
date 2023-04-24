@@ -79,7 +79,8 @@ func initialModel(DB *sql.DB) Model {
 
 func (m Model) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	return getTasks(m.DB)
+	return nil
+	// return getTasks(m.DB)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -115,6 +116,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				delete(m.selected, m.cursor)
 			} else {
 				m.selected[m.cursor] = struct{}{}
+				m.tasks = getTasks(m.DB)
+				return m, nil
 			}
 		}
 	}
@@ -129,42 +132,42 @@ func (m Model) View() string {
 	}
 
 	// Tell the user we're doing something.
-	s := "Checking tasks database table ... "
+	// s := "Checking tasks database table ... "
 
-	// When the server responds with a status, add it to the current line.
+	// Send off whatever we came up with above for rendering.
+	// return "\n" + s + "\n\n"
+	// The header
+	s := "Which operation do you want to perform?\n\n"
+
+	// Iterate over our choices
+	for i, choice := range m.choices {
+
+		// Is the cursor pointing at this choice?
+		cursor := " " // no cursor
+		if m.cursor == i {
+			cursor = ">" // cursor!
+		}
+
+		// Is this choice selected?
+		checked := " " // not selected
+		if _, ok := m.selected[i]; ok {
+			checked = "x" // selected!
+		}
+
+		// Render the row
+		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+	}
+
+	// When the database responds with the tasks, add it to the current line.
 	if len(m.tasks) > 0 {
 		for _, task := range m.tasks {
 			s += fmt.Sprintf("\n%v | %v | %v\n", task.Id, task.Description, task.Status)
 		}
 	}
 
-	// Send off whatever we came up with above for rendering.
-	return "\n" + s + "\n\n"
-	// // The header
-	// s := "Which operation do you want to perform?\n\n"
+	// The footer
+	s += "\nPress q to quit.\n"
 
-	// // Iterate over our choices
-	// for i, choice := range m.choices {
-
-	// 	// Is the cursor pointing at this choice?
-	// 	cursor := " " // no cursor
-	// 	if m.cursor == i {
-	// 		cursor = ">" // cursor!
-	// 	}
-
-	// 	// Is this choice selected?
-	// 	checked := " " // not selected
-	// 	if _, ok := m.selected[i]; ok {
-	// 		checked = "x" // selected!
-	// 	}
-
-	// 	// Render the row
-	// 	s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
-	// }
-
-	// // The footer
-	// s += "\nPress q to quit.\n"
-
-	// // Send the UI for rendering
-	// return s
+	// Send the UI for rendering
+	return s
 }
