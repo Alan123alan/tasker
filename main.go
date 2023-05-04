@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"sort"
+
 	// "flag"
 	"fmt"
 	"log"
@@ -11,12 +13,24 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const (
+	Get    string = "get"
+	Add    string = "add"
+	Create string = "create"
+	Update string = "update"
+)
+
+// type Commands map[Command]Subcommands
+// type Subcommands []Subcommand
+// type Command string
+// type Subcommand string
+
 type Model struct {
-	choices  []string
+	commands map[string][]string
 	cursor   int
 	selected map[int]struct{}
 	DB       *sql.DB
-	tasks    taskMsg
+	tasks    []TaskModel
 	err      error
 }
 
@@ -70,8 +84,13 @@ func main() {
 }
 
 func initialModel(DB *sql.DB) Model {
+	commands := make(map[string][]string)
+	commands[Get] = []string{"All", "ID"}
+	commands[Add] = []string{}
+	commands[Update] = []string{}
+	commands[Create] = []string{"table", "task"}
 	return Model{
-		choices:  []string{"get", "add", "update", "create", "help"},
+		commands: commands,
 		selected: make(map[int]struct{}),
 		DB:       DB,
 	}
@@ -107,7 +126,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
+			if m.cursor < len(m.commands)-1 {
 				m.cursor++
 			}
 		case "enter", " ":
@@ -131,39 +150,46 @@ func (m Model) View() string {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
 
-	// Tell the user we're doing something.
-	// s := "Checking tasks database table ... "
-
-	// Send off whatever we came up with above for rendering.
-	// return "\n" + s + "\n\n"
-	// The header
+	//ask user wich command does it want to execute
 	s := "Which operation do you want to perform?\n\n"
-
-	// Iterate over our choices
-	for i, choice := range m.choices {
+	commands := make([]string, 0, len(m.commands))
+	for command := range m.commands {
+		commands = append(commands, command)
+	}
+	sort.Strings(commands)
+	// Iterate over our commands
+	for index, command := range commands {
 
 		// Is the cursor pointing at this choice?
 		cursor := " " // no cursor
-		if m.cursor == i {
+		if m.cursor == index {
 			cursor = ">" // cursor!
 		}
 
 		// Is this choice selected?
-		checked := " " // not selected
-		if _, ok := m.selected[i]; ok {
-			checked = "x" // selected!
+		checked := "+" // not selected
+		if _, ok := m.selected[index]; ok {
+			checked = "-" // selected!
 		}
 
 		// Render the row
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+		s += fmt.Sprintf("%s [%s] %v\n", cursor, checked, command)
+		//if the command is selected and there is vailable subcommands, display them
+		if checked == "-" {
+			subcommands := m.commands[command]
+			sort.Strings(subcommands)
+			for _, subcommand := range subcommands {
+				s += fmt.Sprintf("    - %v\n", subcommand)
+			}
+		}
 	}
 
 	// When the database responds with the tasks, add it to the current line.
-	if len(m.tasks) > 0 {
-		for _, task := range m.tasks {
-			s += fmt.Sprintf("\n%v | %v | %v\n", task.Id, task.Description, task.Status)
-		}
-	}
+	// if len(m.tasks) > 0 {
+	// 	for _, task := range m.tasks {
+	// 		s += fmt.Sprintf("\n%v | %v | %v\n", task.Id, task.Description, task.Status)
+	// 	}
+	// }
 
 	// The footer
 	s += "\nPress q to quit.\n"
