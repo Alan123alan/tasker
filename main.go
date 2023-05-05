@@ -150,16 +150,23 @@ func (m Model) View() string {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
 
-	//ask user wich command does it want to execute
-	s := "Which operation do you want to perform?\n\n"
+	return mainView(m)
+
+}
+
+func mainView(m Model) string {
+	//Ask user wich command does it want to execute
+	s := "Which command do you want to execute?\n\n"
+
+	//Get list of available commands and sort them alphabetically
 	commands := make([]string, 0, len(m.commands))
 	for command := range m.commands {
 		commands = append(commands, command)
 	}
 	sort.Strings(commands)
+
 	// Iterate over our commands
 	for index, command := range commands {
-
 		// Is the cursor pointing at this choice?
 		cursor := " " // no cursor
 		if m.cursor == index {
@@ -176,24 +183,48 @@ func (m Model) View() string {
 		s += fmt.Sprintf("%s [%s] %v\n", cursor, checked, command)
 		//if the command is selected and there is vailable subcommands, display them
 		if checked == "-" {
-			subcommands := m.commands[command]
-			sort.Strings(subcommands)
-			for _, subcommand := range subcommands {
-				s += fmt.Sprintf("    - %v\n", subcommand)
+			// subcommands := m.commands[command]
+			// sort.Strings(subcommands)
+			// for _, subcommand := range subcommands {
+			// 	s += fmt.Sprintf("    - %v\n", subcommand)
+			// }
+			switch command {
+			case Create:
+				return createCommandView()
+			case Get:
+				return getCommandView(m)
 			}
 		}
 	}
-
-	// When the database responds with the tasks, add it to the current line.
-	// if len(m.tasks) > 0 {
-	// 	for _, task := range m.tasks {
-	// 		s += fmt.Sprintf("\n%v | %v | %v\n", task.Id, task.Description, task.Status)
-	// 	}
-	// }
-
 	// The footer
 	s += "\nPress q to quit.\n"
+	return s
+}
 
-	// Send the UI for rendering
+func createCommandView() string {
+	s := "Which table do you want to create in database?\n\n"
+	s += "\nPress q to quit.\n"
+	return s
+}
+
+func addCommandView() string {
+	s := "Enter new task:\n\n"
+	s += "\nPress q to quit.\n"
+	return s
+}
+
+func getCommandView(m Model) string {
+	tasks := getTasks(m.DB)
+	s := "Get list of tasks:\n\n"
+	for _, task := range tasks {
+		s += fmt.Sprintf("%s [%s] %v\n", task.Id, task.Description, task.Status)
+	}
+	s += "\nPress q to quit.\n"
+	return s
+}
+
+func updateCommandView() string {
+	s := "Update existing task:\n\n"
+	s += "\nPress q to quit.\n"
 	return s
 }
